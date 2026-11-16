@@ -1,24 +1,62 @@
-﻿namespace CITA255Final
+﻿using Javax.Xml.Transform;
+using QuestLog;
+using System.Collections.ObjectModel;
+using System.Text.Json;
+using static System.Net.Mime.MediaTypeNames;
+namespace CITA255Final
 {
     public partial class MainPage : ContentPage
     {
-        int count = 0;
+        public ObservableCollection<Game> gameList { get; } = new ObservableCollection<Game>();
+
+        Game[] pool =
+        {
+           new Game {Title = "Clear the cellar rats", Giver = "Shopkeep", Reward = 5 },
+           new Game {Title = "Escort the merchant to Dunmoor", Giver="The Wizard", Reward = 25 }
+        };
+
+        int next = 0;
 
         public MainPage()
         {
             InitializeComponent();
+            BindingContext = this;
+            Load();
         }
 
-        private void OnCounterClicked(object? sender, EventArgs e)
+        string path = Path.Combine(FileSystem.AppDataDirectory, "gamelist.json");
+        void Save()
         {
-            count++;
+            string json = JsonSerializer.Serialize(gameList);
+            File.WriteAllText(path, json);
+        }
+        void Load()
+        {
+            if (!File.Exists(path)) return;
+            string json = File.ReadAllText(path);
+            List<Game> saved =
+            JsonSerializer.Deserialize<List<Game>>(json);
+            foreach (Game q in saved)
+                gameList.Add(q);
+            
+        }
 
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
+        private async void onDetailsClicked(object? sender, EventArgs e)
+        {
+            await Shell.Current.GoToAsync("gameDesc");
+        }
 
-            SemanticScreenReader.Announce(CounterBtn.Text);
+        private async void onAddGame(object sender, EventArgs e)
+        {
+            //await Shell.Current.GoToAsync("addGame");
+            Game template = pool[next];
+            gameList.Add(item: new Game
+            {
+                Title = template.Title,
+                Giver = template.Giver,
+                Reward = template.Reward
+            });
+            Save();
         }
     }
 }
